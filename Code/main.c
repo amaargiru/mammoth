@@ -1,84 +1,84 @@
-// Программное обеспечение GSM-телефона ProtoPhone Mod01 Mammoth
-// Версия 0.1 от 23 мая 2011
+// РџСЂРѕРіСЂР°РјРјРЅРѕРµ РѕР±РµСЃРїРµС‡РµРЅРёРµ GSM-С‚РµР»РµС„РѕРЅР° ProtoPhone Mod01 Mammoth
+// Р’РµСЂСЃРёСЏ 0.1 РѕС‚ 23 РјР°СЏ 2011
 
-#include "iom8.h"								// Определения внутренних регистров
+#include "iom8.h"								// РћРїСЂРµРґРµР»РµРЅРёСЏ РІРЅСѓС‚СЂРµРЅРЅРёС… СЂРµРіРёСЃС‚СЂРѕРІ
 
-#include "inavr.h"							// Intrinsic-функции
+#include "inavr.h"							// Intrinsic-С„СѓРЅРєС†РёРё
 
-#include "ctype.h"							// Операции с символами
+#include "ctype.h"							// РћРїРµСЂР°С†РёРё СЃ СЃРёРјРІРѕР»Р°РјРё
 
-#include "string.h"							// Операции со строками
+#include "string.h"							// РћРїРµСЂР°С†РёРё СЃРѕ СЃС‚СЂРѕРєР°РјРё
 
-#define bit(n)(1 << (n)) // Определение операций с битами
-#define setbit(p, n)(p |= bit(n)) // Установить бит
-#define clrbit(p, n)(p &= ~bit(n)) // Сбросить бит
+#define bit(n)(1 << (n)) // РћРїСЂРµРґРµР»РµРЅРёРµ РѕРїРµСЂР°С†РёР№ СЃ Р±РёС‚Р°РјРё
+#define setbit(p, n)(p |= bit(n)) // РЈСЃС‚Р°РЅРѕРІРёС‚СЊ Р±РёС‚
+#define clrbit(p, n)(p &= ~bit(n)) // РЎР±СЂРѕСЃРёС‚СЊ Р±РёС‚
 
-#define MASTERCLOCK 7372800 // Тактовая частота процессора в Гц
-#define delay_us(c) __delay_cycles(MASTERCLOCK / 1000000 * c) // Микросекундная задержка. c max = 268435455
-#define delay_ms(c) __delay_cycles(MASTERCLOCK / 1000 * c) // Миллисекундная задержка. c max = 268435
+#define MASTERCLOCK 7372800 // РўР°РєС‚РѕРІР°СЏ С‡Р°СЃС‚РѕС‚Р° РїСЂРѕС†РµСЃСЃРѕСЂР° РІ Р“С†
+#define delay_us(c) __delay_cycles(MASTERCLOCK / 1000000 * c) // РњРёРєСЂРѕСЃРµРєСѓРЅРґРЅР°СЏ Р·Р°РґРµСЂР¶РєР°. c max = 268435455
+#define delay_ms(c) __delay_cycles(MASTERCLOCK / 1000 * c) // РњРёР»Р»РёСЃРµРєСѓРЅРґРЅР°СЏ Р·Р°РґРµСЂР¶РєР°. c max = 268435
 
-// Порт B
-#define PWRKEY 1 // Включение GSM модуля
-#define ENA 2 // Включение питания GSM-модуля
-#define MOSI 3 // Линия MOSI SPI-интерфейса
-#define MISO 4 // Линия MISO SPI-интерфейса
-#define SCK 5 // Линия SCK SPI-интерфейса
-// Порт C
-#define COL2 0 // Колонка 2 опроса клавиатуры
-#define COL1 1 // Колонка 1 опроса клавиатуры
-#define BUZZ 2 // Вызывной динамик
-#define H_P 3 // Светодиод "Питание"
-#define H_C 4 // Светодиод "Звонок"
-#define H_SL 5 // Светодиод "Уровень сигнала"
-#define RST 6 // Сброс
-// Порт D
-#define TXD 0 // Выход UART GSM-модуля, вход UART микроконтроллера
-#define RXD 1 // Вход UART GSM-модуля, выход UART микроконтроллера
-#define ROW1 2 // Строка 1 опроса клавиатуры
-#define ROW2 3 // Строка 2 опроса клавиатуры
-#define COL3 4 // Колонка 3 опроса клавиатуры
-#define ROW5 5 // Строка 5 опроса клавиатуры
-#define ROW4 6 // Строка 4 опроса клавиатуры
-#define ROW3 7 // Строка 3 опроса клавиатуры
+// РџРѕСЂС‚ B
+#define PWRKEY 1 // Р’РєР»СЋС‡РµРЅРёРµ GSM РјРѕРґСѓР»СЏ
+#define ENA 2 // Р’РєР»СЋС‡РµРЅРёРµ РїРёС‚Р°РЅРёСЏ GSM-РјРѕРґСѓР»СЏ
+#define MOSI 3 // Р›РёРЅРёСЏ MOSI SPI-РёРЅС‚РµСЂС„РµР№СЃР°
+#define MISO 4 // Р›РёРЅРёСЏ MISO SPI-РёРЅС‚РµСЂС„РµР№СЃР°
+#define SCK 5 // Р›РёРЅРёСЏ SCK SPI-РёРЅС‚РµСЂС„РµР№СЃР°
+// РџРѕСЂС‚ C
+#define COL2 0 // РљРѕР»РѕРЅРєР° 2 РѕРїСЂРѕСЃР° РєР»Р°РІРёР°С‚СѓСЂС‹
+#define COL1 1 // РљРѕР»РѕРЅРєР° 1 РѕРїСЂРѕСЃР° РєР»Р°РІРёР°С‚СѓСЂС‹
+#define BUZZ 2 // Р’С‹Р·С‹РІРЅРѕР№ РґРёРЅР°РјРёРє
+#define H_P 3 // РЎРІРµС‚РѕРґРёРѕРґ "РџРёС‚Р°РЅРёРµ"
+#define H_C 4 // РЎРІРµС‚РѕРґРёРѕРґ "Р—РІРѕРЅРѕРє"
+#define H_SL 5 // РЎРІРµС‚РѕРґРёРѕРґ "РЈСЂРѕРІРµРЅСЊ СЃРёРіРЅР°Р»Р°"
+#define RST 6 // РЎР±СЂРѕСЃ
+// РџРѕСЂС‚ D
+#define TXD 0 // Р’С‹С…РѕРґ UART GSM-РјРѕРґСѓР»СЏ, РІС…РѕРґ UART РјРёРєСЂРѕРєРѕРЅС‚СЂРѕР»Р»РµСЂР°
+#define RXD 1 // Р’С…РѕРґ UART GSM-РјРѕРґСѓР»СЏ, РІС‹С…РѕРґ UART РјРёРєСЂРѕРєРѕРЅС‚СЂРѕР»Р»РµСЂР°
+#define ROW1 2 // РЎС‚СЂРѕРєР° 1 РѕРїСЂРѕСЃР° РєР»Р°РІРёР°С‚СѓСЂС‹
+#define ROW2 3 // РЎС‚СЂРѕРєР° 2 РѕРїСЂРѕСЃР° РєР»Р°РІРёР°С‚СѓСЂС‹
+#define COL3 4 // РљРѕР»РѕРЅРєР° 3 РѕРїСЂРѕСЃР° РєР»Р°РІРёР°С‚СѓСЂС‹
+#define ROW5 5 // РЎС‚СЂРѕРєР° 5 РѕРїСЂРѕСЃР° РєР»Р°РІРёР°С‚СѓСЂС‹
+#define ROW4 6 // РЎС‚СЂРѕРєР° 4 РѕРїСЂРѕСЃР° РєР»Р°РІРёР°С‚СѓСЂС‹
+#define ROW3 7 // РЎС‚СЂРѕРєР° 3 РѕРїСЂРѕСЃР° РєР»Р°РІРёР°С‚СѓСЂС‹
 #define ROWMASK 0xEC // = 11101100b
 
-void PortInit(void) // Активация портов ввода-вывода
+void PortInit(void) // РђРєС‚РёРІР°С†РёСЏ РїРѕСЂС‚РѕРІ РІРІРѕРґР°-РІС‹РІРѕРґР°
 {
-    DDRB = (1 << PWRKEY) | (1 << ENA); //	Порт B
-    DDRC = (1 << COL2) | (1 << COL1) | (1 << BUZZ) | (1 << H_P) | (1 << H_C) | (1 << H_SL); //	Порт C
-    DDRD = (1 << RXD) | (1 << COL3); //	Порт D
-    PORTD = (1 << ROW1) | (1 << ROW2) | (1 << ROW3) | (1 << ROW4) | (1 << ROW5); // Включаем подтяжки у входов сканирования клавиатуры
+    DDRB = (1 << PWRKEY) | (1 << ENA); //	РџРѕСЂС‚ B
+    DDRC = (1 << COL2) | (1 << COL1) | (1 << BUZZ) | (1 << H_P) | (1 << H_C) | (1 << H_SL); //	РџРѕСЂС‚ C
+    DDRD = (1 << RXD) | (1 << COL3); //	РџРѕСЂС‚ D
+    PORTD = (1 << ROW1) | (1 << ROW2) | (1 << ROW3) | (1 << ROW4) | (1 << ROW5); // Р’РєР»СЋС‡Р°РµРј РїРѕРґС‚СЏР¶РєРё Сѓ РІС…РѕРґРѕРІ СЃРєР°РЅРёСЂРѕРІР°РЅРёСЏ РєР»Р°РІРёР°С‚СѓСЂС‹
 } // PortInit
 
 #define FRAMING_ERROR(1 << FE)
 #define PARITY_ERROR(1 << UPE)
 #define DATA_OVERRUN(1 << DOR)
 #define DATA_REGISTER_EMPTY(1 << UDRE)
-#define BAUD 115200 // Скорость UART
+#define BAUD 115200 // РЎРєРѕСЂРѕСЃС‚СЊ UART
 #define MYUBRR(MASTERCLOCK / 16 / BAUD - 1)
 
 #define RXBUFLENGTH 100
-char RxBuf[RXBUFLENGTH]; // Буфер, в который для дальнейшего анализа записываются данные от GSM-модема
+char RxBuf[RXBUFLENGTH]; // Р‘СѓС„РµСЂ, РІ РєРѕС‚РѕСЂС‹Р№ РґР»СЏ РґР°Р»СЊРЅРµР№С€РµРіРѕ Р°РЅР°Р»РёР·Р° Р·Р°РїРёСЃС‹РІР°СЋС‚СЃСЏ РґР°РЅРЅС‹Рµ РѕС‚ GSM-РјРѕРґРµРјР°
 volatile unsigned char RxBufWrPoint = 0;
 
 #define NUMBUFLENGTH 30
-char NumBuf[NUMBUFLENGTH]; // Буфер для набираемого номера
+char NumBuf[NUMBUFLENGTH]; // Р‘СѓС„РµСЂ РґР»СЏ РЅР°Р±РёСЂР°РµРјРѕРіРѕ РЅРѕРјРµСЂР°
 volatile unsigned char NumBufWrPoint = 0;
 
-unsigned char GSMStatus = 0; // Состояние GSM-модуля: 0 - выключен ; 1 - включен; 2 - исходящий звонок; 3 - входящий звонок; 4 - идет разговор по входящему звонку
-char GSMSigStrength = 0; // Уровень сигнала
+unsigned char GSMStatus = 0; // РЎРѕСЃС‚РѕСЏРЅРёРµ GSM-РјРѕРґСѓР»СЏ: 0 - РІС‹РєР»СЋС‡РµРЅ ; 1 - РІРєР»СЋС‡РµРЅ; 2 - РёСЃС…РѕРґСЏС‰РёР№ Р·РІРѕРЅРѕРє; 3 - РІС…РѕРґСЏС‰РёР№ Р·РІРѕРЅРѕРє; 4 - РёРґРµС‚ СЂР°Р·РіРѕРІРѕСЂ РїРѕ РІС…РѕРґСЏС‰РµРјСѓ Р·РІРѕРЅРєСѓ
+char GSMSigStrength = 0; // РЈСЂРѕРІРµРЅСЊ СЃРёРіРЅР°Р»Р°
 
-void UARTinit(void) // Инициализация UART
+void UARTinit(void) // РРЅРёС†РёР°Р»РёР·Р°С†РёСЏ UART
 {
-    // Инициализация UART: 8 Data, 1 Stop; RX interrupt ON
+    // РРЅРёС†РёР°Р»РёР·Р°С†РёСЏ UART: 8 Data, 1 Stop; RX interrupt ON
     UCSRA = 0x00;
-    UCSRB = (1 << RXEN) | (1 << TXEN) | (1 << RXCIE); // Приемник включен, передатчик включен, прерывание от приемника включено
-    UCSRC = (1 << URSEL) | (1 << UCSZ0) | (1 << UCSZ1); // Длина данных 8 бит
-    UBRRH = (unsigned char)(MYUBRR >> 8); // Задаем скорость
+    UCSRB = (1 << RXEN) | (1 << TXEN) | (1 << RXCIE); // РџСЂРёРµРјРЅРёРє РІРєР»СЋС‡РµРЅ, РїРµСЂРµРґР°С‚С‡РёРє РІРєР»СЋС‡РµРЅ, РїСЂРµСЂС‹РІР°РЅРёРµ РѕС‚ РїСЂРёРµРјРЅРёРєР° РІРєР»СЋС‡РµРЅРѕ
+    UCSRC = (1 << URSEL) | (1 << UCSZ0) | (1 << UCSZ1); // Р”Р»РёРЅР° РґР°РЅРЅС‹С… 8 Р±РёС‚
+    UBRRH = (unsigned char)(MYUBRR >> 8); // Р—Р°РґР°РµРј СЃРєРѕСЂРѕСЃС‚СЊ
     UBRRL = (unsigned char)(MYUBRR);
 } // UARTinit
 
-int putchar(int data) // Вывод байта в UART
+int putchar(int data) // Р’С‹РІРѕРґ Р±Р°Р№С‚Р° РІ UART
 {
     while (!(UCSRA & DATA_REGISTER_EMPTY));
     UDR = data;
@@ -87,17 +87,17 @@ int putchar(int data) // Вывод байта в UART
     return data;
 } //putchar
 
-void OutText(char * text) // Вывод текста в UART
+void OutText(char * text) // Р’С‹РІРѕРґ С‚РµРєСЃС‚Р° РІ UART
 {
     while ( * text) putchar( * text++);
 } //OutText
 
-void OutDat(unsigned long int val, unsigned char len, unsigned char Const) // Вывод числа в UART
+void OutDat(unsigned long int val, unsigned char len, unsigned char Const) // Р’С‹РІРѕРґ С‡РёСЃР»Р° РІ UART
 {
-    unsigned char Str[16]; // Максимальная длина числа (в печатаемом виде)
+    unsigned char Str[16]; // РњР°РєСЃРёРјР°Р»СЊРЅР°СЏ РґР»РёРЅР° С‡РёСЃР»Р° (РІ РїРµС‡Р°С‚Р°РµРјРѕРј РІРёРґРµ)
     unsigned char k = 0;
 
-    for (k = 0; k < len; k++) // Превращаем число в строку
+    for (k = 0; k < len; k++) // РџСЂРµРІСЂР°С‰Р°РµРј С‡РёСЃР»Рѕ РІ СЃС‚СЂРѕРєСѓ
     {
         *(Str + (len - k - 1)) = (val % Const) + '0';
 
@@ -107,35 +107,35 @@ void OutDat(unsigned long int val, unsigned char len, unsigned char Const) // Вы
         val /= Const;
     }
 
-    Str[len] = 0; // Печатаем число
+    Str[len] = 0; // РџРµС‡Р°С‚Р°РµРј С‡РёСЃР»Рѕ
     k = 0;
     while (Str[k] != 0)
         putchar(Str[k++]);
 } //OutDat
 
-#pragma vector = USART_RXC_vect // Прерывание по приходу байта в UART
+#pragma vector = USART_RXC_vect // РџСЂРµСЂС‹РІР°РЅРёРµ РїРѕ РїСЂРёС…РѕРґСѓ Р±Р°Р№С‚Р° РІ UART
 __interrupt void USART_RXC_Interrupt(void) {
-    char InData = UDR; // Данные из UDR надо считать обязательно, даже если они нам не пригодятся
-    if (InData > 20) // Отбрасываем служебные символы
+    char InData = UDR; // Р”Р°РЅРЅС‹Рµ РёР· UDR РЅР°РґРѕ СЃС‡РёС‚Р°С‚СЊ РѕР±СЏР·Р°С‚РµР»СЊРЅРѕ, РґР°Р¶Рµ РµСЃР»Рё РѕРЅРё РЅР°Рј РЅРµ РїСЂРёРіРѕРґСЏС‚СЃСЏ
+    if (InData > 20) // РћС‚Р±СЂР°СЃС‹РІР°РµРј СЃР»СѓР¶РµР±РЅС‹Рµ СЃРёРјРІРѕР»С‹
     {
-        RxBuf[RxBufWrPoint] = InData; // Записываем пришедший байт в массив RxBuf
+        RxBuf[RxBufWrPoint] = InData; // Р—Р°РїРёСЃС‹РІР°РµРј РїСЂРёС€РµРґС€РёР№ Р±Р°Р№С‚ РІ РјР°СЃСЃРёРІ RxBuf
         RxBufWrPoint++;
     }
 } //USART_RXC_Interrupt
 
-void ClearRxBuf(void) // Очистка массива RxBuf
+void ClearRxBuf(void) // РћС‡РёСЃС‚РєР° РјР°СЃСЃРёРІР° RxBuf
 {
     for (unsigned char ClearPoint = 0; ClearPoint < RXBUFLENGTH; RxBuf[ClearPoint++] = 0);
     RxBufWrPoint = 0;
 } //ClearRxBuf
 
-void ClearNumBuf(void) // Очистка массива RxBuf
+void ClearNumBuf(void) // РћС‡РёСЃС‚РєР° РјР°СЃСЃРёРІР° RxBuf
 {
     for (unsigned char ClearPoint = 0; ClearPoint < NUMBUFLENGTH; NumBuf[ClearPoint++] = 0);
     NumBufWrPoint = 0;
 } //ClearNumBuf
 
-char KeyConvert(char RawKey) // Конвертирует значение, считанное с клавиатуры в читаемый вид
+char KeyConvert(char RawKey) // РљРѕРЅРІРµСЂС‚РёСЂСѓРµС‚ Р·РЅР°С‡РµРЅРёРµ, СЃС‡РёС‚Р°РЅРЅРѕРµ СЃ РєР»Р°РІРёР°С‚СѓСЂС‹ РІ С‡РёС‚Р°РµРјС‹Р№ РІРёРґ
 {
     char ConvertedKey = 0;
 
@@ -192,14 +192,14 @@ char KeyConvert(char RawKey) // Конвертирует значение, считанное с клавиатуры в 
     return ConvertedKey;
 } //KeyConvert
 
-char KeyScan(void) // Сканирование клавиатуры. Выдает 0, если ни одна клавиша не нажата или код нажатой клавиши (от 1 до 15)
+char KeyScan(void) // РЎРєР°РЅРёСЂРѕРІР°РЅРёРµ РєР»Р°РІРёР°С‚СѓСЂС‹. Р’С‹РґР°РµС‚ 0, РµСЃР»Рё РЅРё РѕРґРЅР° РєР»Р°РІРёС€Р° РЅРµ РЅР°Р¶Р°С‚Р° РёР»Рё РєРѕРґ РЅР°Р¶Р°С‚РѕР№ РєР»Р°РІРёС€Рё (РѕС‚ 1 РґРѕ 15)
 {
     unsigned char PreKeyCode = 0;
     unsigned char KeyCode = 0;
     #define FIRST_DEBOUNCE_TIME 100
     #define DEBOUNCE_TIME 20
 
-    clrbit(PORTC, COL1); // Сканирование колонки 1
+    clrbit(PORTC, COL1); // РЎРєР°РЅРёСЂРѕРІР°РЅРёРµ РєРѕР»РѕРЅРєРё 1
     setbit(PORTC, COL2);
     setbit(PORTD, COL3);
     delay_ms(DEBOUNCE_TIME);
@@ -209,7 +209,7 @@ char KeyScan(void) // Сканирование клавиатуры. Выдает 0, если ни одна клавиша не
     if ((KeyCode == PreKeyCode) && (KeyCode != ROWMASK))
         return KeyConvert(KeyCode);
 
-    setbit(PORTC, COL1); // Сканирование колонки 2
+    setbit(PORTC, COL1); // РЎРєР°РЅРёСЂРѕРІР°РЅРёРµ РєРѕР»РѕРЅРєРё 2
     clrbit(PORTC, COL2);
     setbit(PORTD, COL3);
     delay_ms(DEBOUNCE_TIME);
@@ -219,7 +219,7 @@ char KeyScan(void) // Сканирование клавиатуры. Выдает 0, если ни одна клавиша не
     if ((KeyCode == PreKeyCode) && (KeyCode != ROWMASK))
         return KeyConvert(KeyCode + 0x0F);
 
-    setbit(PORTC, COL1); // Сканирование колонки 3
+    setbit(PORTC, COL1); // РЎРєР°РЅРёСЂРѕРІР°РЅРёРµ РєРѕР»РѕРЅРєРё 3
     setbit(PORTC, COL2);
     clrbit(PORTD, COL3);
     delay_ms(DEBOUNCE_TIME);
@@ -229,13 +229,13 @@ char KeyScan(void) // Сканирование клавиатуры. Выдает 0, если ни одна клавиша не
     if ((KeyCode == PreKeyCode) && (KeyCode != ROWMASK))
         return KeyConvert(KeyCode + 0x1E);
 
-    setbit(PORTC, COL1); // Конец сканирования
+    setbit(PORTC, COL1); // РљРѕРЅРµС† СЃРєР°РЅРёСЂРѕРІР°РЅРёСЏ
     setbit(PORTC, COL2);
     setbit(PORTD, COL3);
     return 0;
 } //KeyScan
 
-void GSM_On(void) // Включение GSM-модуля
+void GSM_On(void) // Р’РєР»СЋС‡РµРЅРёРµ GSM-РјРѕРґСѓР»СЏ
 {
     setbit(PORTB, PWRKEY);
     delay_ms(3000);
@@ -245,34 +245,34 @@ void GSM_On(void) // Включение GSM-модуля
     delay_ms(8000);
 } //GSM_On
 
-void Beep(void) // Короткий звуковой сигнал
+void Beep(void) // РљРѕСЂРѕС‚РєРёР№ Р·РІСѓРєРѕРІРѕР№ СЃРёРіРЅР°Р»
 {
     setbit(PORTC, H_C);
     setbit(PORTC, BUZZ);
     delay_ms(10);
-    if ((GSMStatus != 2) && (GSMStatus != 3)) // Если идет входящий или исходящий звонок, светодиод "Call" гасить не надо
+    if ((GSMStatus != 2) && (GSMStatus != 3)) // Р•СЃР»Рё РёРґРµС‚ РІС…РѕРґСЏС‰РёР№ РёР»Рё РёСЃС…РѕРґСЏС‰РёР№ Р·РІРѕРЅРѕРє, СЃРІРµС‚РѕРґРёРѕРґ "Call" РіР°СЃРёС‚СЊ РЅРµ РЅР°РґРѕ
         clrbit(PORTC, H_C);
     clrbit(PORTC, BUZZ);
     delay_ms(20);
 } //Beep
 
-void LongBeep(void) // Звуковой сигнал подлиннее
+void LongBeep(void) // Р—РІСѓРєРѕРІРѕР№ СЃРёРіРЅР°Р» РїРѕРґР»РёРЅРЅРµРµ
 {
     setbit(PORTC, H_C);
     setbit(PORTC, BUZZ);
     delay_ms(15);
-    if ((GSMStatus != 2) && (GSMStatus != 3)) // Если идет входящий или исходящий звонок, светодиод "Call" гасить не надо
+    if ((GSMStatus != 2) && (GSMStatus != 3)) // Р•СЃР»Рё РёРґРµС‚ РІС…РѕРґСЏС‰РёР№ РёР»Рё РёСЃС…РѕРґСЏС‰РёР№ Р·РІРѕРЅРѕРє, СЃРІРµС‚РѕРґРёРѕРґ "Call" РіР°СЃРёС‚СЊ РЅРµ РЅР°РґРѕ
         clrbit(PORTC, H_C);
     clrbit(PORTC, BUZZ);
     delay_ms(100);
 } //LongBeep
 
-void IncomingCallBeep(void) // Длинный звуковой сигнал
+void IncomingCallBeep(void) // Р”Р»РёРЅРЅС‹Р№ Р·РІСѓРєРѕРІРѕР№ СЃРёРіРЅР°Р»
 {
     setbit(PORTC, H_C);
     setbit(PORTC, BUZZ);
     delay_ms(100);
-    if ((GSMStatus != 2) && (GSMStatus != 3)) // Если идет входящий или исходящий звонок, светодиод "Call" гасить не надо
+    if ((GSMStatus != 2) && (GSMStatus != 3)) // Р•СЃР»Рё РёРґРµС‚ РІС…РѕРґСЏС‰РёР№ РёР»Рё РёСЃС…РѕРґСЏС‰РёР№ Р·РІРѕРЅРѕРє, СЃРІРµС‚РѕРґРёРѕРґ "Call" РіР°СЃРёС‚СЊ РЅРµ РЅР°РґРѕ
         clrbit(PORTC, H_C);
     clrbit(PORTC, BUZZ);
     delay_ms(100);
@@ -281,41 +281,41 @@ void IncomingCallBeep(void) // Длинный звуковой сигнал
 unsigned int PowerFlashOrder = 0xAAAA; // = 1010101010101010b
 unsigned int SignalLevelFlashOrder = 0x0000;
 
-void TimerInit(void) // Инициализация таймера
+void TimerInit(void) // РРЅРёС†РёР°Р»РёР·Р°С†РёСЏ С‚Р°Р№РјРµСЂР°
 {
-    TCCR0 = (1 << CS00) | (1 << CS01); // Тактирование от системного клока, с предделителем 1024 = ~30 мс @ 7 МГц
-    TIMSK |= 1 << TOIE0; // Разрешить прерывания по достижению OCR0A
+    TCCR0 = (1 << CS00) | (1 << CS01); // РўР°РєС‚РёСЂРѕРІР°РЅРёРµ РѕС‚ СЃРёСЃС‚РµРјРЅРѕРіРѕ РєР»РѕРєР°, СЃ РїСЂРµРґРґРµР»РёС‚РµР»РµРј 1024 = ~30 РјСЃ @ 7 РњР“С†
+    TIMSK |= 1 << TOIE0; // Р Р°Р·СЂРµС€РёС‚СЊ РїСЂРµСЂС‹РІР°РЅРёСЏ РїРѕ РґРѕСЃС‚РёР¶РµРЅРёСЋ OCR0A
     TCNT0 = 0x00;
 } //TimerInit()
 
 unsigned int TimerCounter = 0;
 unsigned char SignalLevelObsolete = 0;
 
-#pragma vector = TIMER0_OVF_vect // Прерывание по переполнению Timer0
+#pragma vector = TIMER0_OVF_vect // РџСЂРµСЂС‹РІР°РЅРёРµ РїРѕ РїРµСЂРµРїРѕР»РЅРµРЅРёСЋ Timer0
 __interrupt void TIMER0_OVF_Interrupt(void) {
     TimerCounter++;
 
     if ((TimerCounter % 0x80) == 0) {
         PowerFlashOrder = (PowerFlashOrder << 1) | (PowerFlashOrder >> 15);
-        if (PowerFlashOrder & 0x0001) // Порядок свечения светодиода "Power"
+        if (PowerFlashOrder & 0x0001) // РџРѕСЂСЏРґРѕРє СЃРІРµС‡РµРЅРёСЏ СЃРІРµС‚РѕРґРёРѕРґР° "Power"
             setbit(PORTC, H_P);
         else
             clrbit(PORTC, H_P);
 
         SignalLevelFlashOrder = (SignalLevelFlashOrder << 1) | (SignalLevelFlashOrder >> 15);
-        if (SignalLevelFlashOrder & 0x0001) // Порядок свечения светодиода "Signsl level"
+        if (SignalLevelFlashOrder & 0x0001) // РџРѕСЂСЏРґРѕРє СЃРІРµС‡РµРЅРёСЏ СЃРІРµС‚РѕРґРёРѕРґР° "Signsl level"
             setbit(PORTC, H_SL);
         else
             clrbit(PORTC, H_SL);
 
-        if ((TimerCounter % 0x5000) == 0) // Пора вновь определить уровень сигнала
+        if ((TimerCounter % 0x5000) == 0) // РџРѕСЂР° РІРЅРѕРІСЊ РѕРїСЂРµРґРµР»РёС‚СЊ СѓСЂРѕРІРµРЅСЊ СЃРёРіРЅР°Р»Р°
         {
             SignalLevelObsolete = 1;
         }
     }
 } //TIMER0_OVF_Interrupt
 
-int StrToInt(char * InputStr) // Процедура конвертирует строку в число типа int. Конвертируются только цифры
+int StrToInt(char * InputStr) // РџСЂРѕС†РµРґСѓСЂР° РєРѕРЅРІРµСЂС‚РёСЂСѓРµС‚ СЃС‚СЂРѕРєСѓ РІ С‡РёСЃР»Рѕ С‚РёРїР° int. РљРѕРЅРІРµСЂС‚РёСЂСѓСЋС‚СЃСЏ С‚РѕР»СЊРєРѕ С†РёС„СЂС‹
 {
     int ReturnValue = 0;
     unsigned char StrCount = 0;
@@ -328,23 +328,23 @@ int StrToInt(char * InputStr) // Процедура конвертирует строку в число типа int.
 } //StrToInt
 
 void SignalLevelDefinition(void) {
-    ClearRxBuf(); // Перед AT+CSQ
-    OutText("AT+CSQ\n\r"); // Запрос уровня сигнала сотовой сети
+    ClearRxBuf(); // РџРµСЂРµРґ AT+CSQ
+    OutText("AT+CSQ\n\r"); // Р—Р°РїСЂРѕСЃ СѓСЂРѕРІРЅСЏ СЃРёРіРЅР°Р»Р° СЃРѕС‚РѕРІРѕР№ СЃРµС‚Рё
     delay_ms(300);
     OutText(RxBuf);
     OutText("\n\r");
-    strtok(RxBuf, ","); // Отсекаем bit error rate <ber>, который идет после запятой
+    strtok(RxBuf, ","); // РћС‚СЃРµРєР°РµРј bit error rate <ber>, РєРѕС‚РѕСЂС‹Р№ РёРґРµС‚ РїРѕСЃР»Рµ Р·Р°РїСЏС‚РѕР№
     GSMSigStrength = StrToInt(RxBuf);
-    if (GSMSigStrength >= 25) // Нормальное значение
+    if (GSMSigStrength >= 25) // РќРѕСЂРјР°Р»СЊРЅРѕРµ Р·РЅР°С‡РµРЅРёРµ
         GSMSigStrength = 5;
     else {
         GSMSigStrength /= 5;
-        if (GSMSigStrength == 0) GSMSigStrength = 1; // Чтобы моргнуть хотя бы раз и показать пользователю, что GSM-модуль видит сеть
+        if (GSMSigStrength == 0) GSMSigStrength = 1; // Р§С‚РѕР±С‹ РјРѕСЂРіРЅСѓС‚СЊ С…РѕС‚СЏ Р±С‹ СЂР°Р· Рё РїРѕРєР°Р·Р°С‚СЊ РїРѕР»СЊР·РѕРІР°С‚РµР»СЋ, С‡С‚Рѕ GSM-РјРѕРґСѓР»СЊ РІРёРґРёС‚ СЃРµС‚СЊ
     }
-    if (GSMSigStrength == 99) //	Ненормальное значение, скорее всего, 99 - "Not known or not detectable"
+    if (GSMSigStrength == 99) //	РќРµРЅРѕСЂРјР°Р»СЊРЅРѕРµ Р·РЅР°С‡РµРЅРёРµ, СЃРєРѕСЂРµРµ РІСЃРµРіРѕ, 99 - "Not known or not detectable"
         GSMSigStrength = 0;
 
-    switch (GSMSigStrength) { // Порядок свечения светодиода "Signsl level"
+    switch (GSMSigStrength) { // РџРѕСЂСЏРґРѕРє СЃРІРµС‡РµРЅРёСЏ СЃРІРµС‚РѕРґРёРѕРґР° "Signsl level"
     case 5:
         SignalLevelFlashOrder = 0xAA80;
         break; // = 1010101010000000b
@@ -369,38 +369,38 @@ void SignalLevelDefinition(void) {
 } //SignalLevelDefinition
 
 void main(void) {
-    PortInit(); // Активация портов ввода-вывода
-    UARTinit(); // Инициализация UART
-    TimerInit(); // Инициализация таймера
+    PortInit(); // РђРєС‚РёРІР°С†РёСЏ РїРѕСЂС‚РѕРІ РІРІРѕРґР°-РІС‹РІРѕРґР°
+    UARTinit(); // РРЅРёС†РёР°Р»РёР·Р°С†РёСЏ UART
+    TimerInit(); // РРЅРёС†РёР°Р»РёР·Р°С†РёСЏ С‚Р°Р№РјРµСЂР°
     ClearRxBuf();
 
-    asm("sei"); // Разрешаем прерывания
+    asm("sei"); // Р Р°Р·СЂРµС€Р°РµРј РїСЂРµСЂС‹РІР°РЅРёСЏ
 
-    setbit(PORTC, H_P); // Показываем, что питание подано
+    setbit(PORTC, H_P); // РџРѕРєР°Р·С‹РІР°РµРј, С‡С‚Рѕ РїРёС‚Р°РЅРёРµ РїРѕРґР°РЅРѕ
     delay_ms(300);
     Beep();
     delay_ms(300);
     Beep();
     delay_ms(1000);
 
-    setbit(PORTB, ENA); // Включаем питание GSM модуля
+    setbit(PORTB, ENA); // Р’РєР»СЋС‡Р°РµРј РїРёС‚Р°РЅРёРµ GSM РјРѕРґСѓР»СЏ
     delay_ms(1000);
 
     while (GSMStatus == 0) {
-        GSM_On(); // Включаем GSM модуль
+        GSM_On(); // Р’РєР»СЋС‡Р°РµРј GSM РјРѕРґСѓР»СЊ
         ClearRxBuf();
-        OutText("AT+IPR=115200\n\r"); // Устанавливаем фиксированную скорость связи
+        OutText("AT+IPR=115200\n\r"); // РЈСЃС‚Р°РЅР°РІР»РёРІР°РµРј С„РёРєСЃРёСЂРѕРІР°РЅРЅСѓСЋ СЃРєРѕСЂРѕСЃС‚СЊ СЃРІСЏР·Рё
         delay_ms(300);
-        OutText("ATE0\n\r"); // Отключаем эхо в UART
+        OutText("ATE0\n\r"); // РћС‚РєР»СЋС‡Р°РµРј СЌС…Рѕ РІ UART
         delay_ms(300);
-        OutText("AT+CHFA=0\n\r"); // Выбираем аудиоканал
+        OutText("AT+CHFA=0\n\r"); // Р’С‹Р±РёСЂР°РµРј Р°СѓРґРёРѕРєР°РЅР°Р»
         delay_ms(300);
-        OutText("AT+CLVL=90\n\r"); // Уровень усиления динамика
+        OutText("AT+CLVL=90\n\r"); // РЈСЂРѕРІРµРЅСЊ СѓСЃРёР»РµРЅРёСЏ РґРёРЅР°РјРёРєР°
         delay_ms(300);
-        OutText("AT+CMIC=0,7\n\r"); // Чувствительность микрофона
+        OutText("AT+CMIC=0,7\n\r"); // Р§СѓРІСЃС‚РІРёС‚РµР»СЊРЅРѕСЃС‚СЊ РјРёРєСЂРѕС„РѕРЅР°
         delay_ms(300);
 
-        if ((strstr(RxBuf, "OK") != NULL) && (strstr(RxBuf, "ERROR") == NULL)) // Если GSM-модуль не выдал ошибки и выдал OK...
+        if ((strstr(RxBuf, "OK") != NULL) && (strstr(RxBuf, "ERROR") == NULL)) // Р•СЃР»Рё GSM-РјРѕРґСѓР»СЊ РЅРµ РІС‹РґР°Р» РѕС€РёР±РєРё Рё РІС‹РґР°Р» OK...
             GSMStatus = 1;
         ClearRxBuf();
     }
@@ -409,9 +409,9 @@ void main(void) {
     LongBeep();
     LongBeep();
     SignalLevelDefinition();
-    PowerFlashOrder = 0xFFFF; // = 1111111111111111b, т. е. светодиод "Power" горит постоянно
+    PowerFlashOrder = 0xFFFF; // = 1111111111111111b, С‚. Рµ. СЃРІРµС‚РѕРґРёРѕРґ "Power" РіРѕСЂРёС‚ РїРѕСЃС‚РѕСЏРЅРЅРѕ
 
-    delay_ms(FIRST_DEBOUNCE_TIME); // Для устаканивания переходных процессов после включения питания, могущих пролезть на входы сканирования клавиатуры
+    delay_ms(FIRST_DEBOUNCE_TIME); // Р”Р»СЏ СѓСЃС‚Р°РєР°РЅРёРІР°РЅРёСЏ РїРµСЂРµС…РѕРґРЅС‹С… РїСЂРѕС†РµСЃСЃРѕРІ РїРѕСЃР»Рµ РІРєР»СЋС‡РµРЅРёСЏ РїРёС‚Р°РЅРёСЏ, РјРѕРіСѓС‰РёС… РїСЂРѕР»РµР·С‚СЊ РЅР° РІС…РѕРґС‹ СЃРєР°РЅРёСЂРѕРІР°РЅРёСЏ РєР»Р°РІРёР°С‚СѓСЂС‹
 
     char Key = 0;
     char OldKey = 0;
@@ -445,39 +445,39 @@ void main(void) {
 
         OldKey = Key;
         Key = KeyScan();
-        if ((Key != 0) && (Key != OldKey)) // Если что-то отсканировано и не повтор, моргнем лампочкой и вышлем код
+        if ((Key != 0) && (Key != OldKey)) // Р•СЃР»Рё С‡С‚Рѕ-С‚Рѕ РѕС‚СЃРєР°РЅРёСЂРѕРІР°РЅРѕ Рё РЅРµ РїРѕРІС‚РѕСЂ, РјРѕСЂРіРЅРµРј Р»Р°РјРїРѕС‡РєРѕР№ Рё РІС‹С€Р»РµРј РєРѕРґ
         {
-            if ((Key != 'Y') && (Key != 'S') && (Key != 'N') && (GSMStatus != 2) && (GSMStatus != 3) && (GSMStatus != 4)) // Нажата цифровая клавиша или * или # плюс во время разговора разблокированы только служебные клавиши "YES" и "NO"
+            if ((Key != 'Y') && (Key != 'S') && (Key != 'N') && (GSMStatus != 2) && (GSMStatus != 3) && (GSMStatus != 4)) // РќР°Р¶Р°С‚Р° С†РёС„СЂРѕРІР°СЏ РєР»Р°РІРёС€Р° РёР»Рё * РёР»Рё # РїР»СЋСЃ РІРѕ РІСЂРµРјСЏ СЂР°Р·РіРѕРІРѕСЂР° СЂР°Р·Р±Р»РѕРєРёСЂРѕРІР°РЅС‹ С‚РѕР»СЊРєРѕ СЃР»СѓР¶РµР±РЅС‹Рµ РєР»Р°РІРёС€Рё "YES" Рё "NO"
             {
                 NumBuf[NumBufWrPoint] = Key;
                 NumBufWrPoint++;
                 Beep();
             }
 
-            if (Key == 'N') //	Нажата клавиша "NO"
+            if (Key == 'N') //	РќР°Р¶Р°С‚Р° РєР»Р°РІРёС€Р° "NO"
             {
                 ClearNumBuf();
-                OutText("ATH\n\r"); // ...то сбрасываем разговор
-                clrbit(PORTC, H_C); // Гасим светодиод "Call"
+                OutText("ATH\n\r"); // ...С‚Рѕ СЃР±СЂР°СЃС‹РІР°РµРј СЂР°Р·РіРѕРІРѕСЂ
+                clrbit(PORTC, H_C); // Р“Р°СЃРёРј СЃРІРµС‚РѕРґРёРѕРґ "Call"
                 GSMStatus = 1;
                 delay_ms(200);
                 LongBeep();
                 LongBeep();
             }
 
-            if ((Key == 'Y') && (GSMStatus == 1)) //	Нажата клавиша "YES"
+            if ((Key == 'Y') && (GSMStatus == 1)) //	РќР°Р¶Р°С‚Р° РєР»Р°РІРёС€Р° "YES"
             {
                 OutText("ATD");
                 OutText(NumBuf);
-                OutText(";\n\r"); // Выходим на связь с набитым номером
+                OutText(";\n\r"); // Р’С‹С…РѕРґРёРј РЅР° СЃРІСЏР·СЊ СЃ РЅР°Р±РёС‚С‹Рј РЅРѕРјРµСЂРѕРј
                 ClearNumBuf();
                 delay_ms(200);
                 LongBeep();
                 LongBeep();
                 GSMStatus = 2;
-                setbit(PORTC, H_C); // Зажигаем светодиод "Call"
+                setbit(PORTC, H_C); // Р—Р°Р¶РёРіР°РµРј СЃРІРµС‚РѕРґРёРѕРґ "Call"
             }
-            if ((Key == 'Y') && (GSMStatus == 3)) //	Нажата клавиша "YES"
+            if ((Key == 'Y') && (GSMStatus == 3)) //	РќР°Р¶Р°С‚Р° РєР»Р°РІРёС€Р° "YES"
             {
                 OutText("ATA\n\r");
                 ClearNumBuf();
@@ -485,18 +485,18 @@ void main(void) {
                 delay_ms(200);
                 LongBeep();
                 LongBeep();
-                setbit(PORTC, H_C); // Зажигаем светодиод "Call"
+                setbit(PORTC, H_C); // Р—Р°Р¶РёРіР°РµРј СЃРІРµС‚РѕРґРёРѕРґ "Call"
             }
 
-            if ((Key == 'S') && (GSMStatus == 1)) //	Нажата клавиша "SOS"
+            if ((Key == 'S') && (GSMStatus == 1)) //	РќР°Р¶Р°С‚Р° РєР»Р°РІРёС€Р° "SOS"
             {
-                OutText("ATD89177985198;\n\r"); // Выходим на связь со службой технической поддержки protoboardfab.com
+                OutText("ATD89177985198;\n\r"); // Р’С‹С…РѕРґРёРј РЅР° СЃРІСЏР·СЊ СЃРѕ СЃР»СѓР¶Р±РѕР№ С‚РµС…РЅРёС‡РµСЃРєРѕР№ РїРѕРґРґРµСЂР¶РєРё protoboardfab.com
                 ClearNumBuf();
                 delay_ms(200);
                 LongBeep();
                 LongBeep();
                 GSMStatus = 2;
-                setbit(PORTC, H_C); // Зажигаем светодиод "Call"
+                setbit(PORTC, H_C); // Р—Р°Р¶РёРіР°РµРј СЃРІРµС‚РѕРґРёРѕРґ "Call"
             }
         }
     } //while (1)
