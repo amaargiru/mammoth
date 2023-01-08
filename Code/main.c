@@ -1,13 +1,10 @@
 // Программное обеспечение GSM-телефона ProtoPhone Mod01 Mammoth
 // Версия 0.1 от 23 мая 2011
 
-#include "iom8.h"								// Определения внутренних регистров
-
-#include "inavr.h"							// Intrinsic-функции
-
-#include "ctype.h"							// Операции с символами
-
-#include "string.h"							// Операции со строками
+#include "iom8.h" // Определения внутренних регистров
+#include "inavr.h" // Intrinsic-функции
+#include "ctype.h" // Операции с символами
+#include "string.h" // Операции со строками
 
 #define bit(n)(1 << (n)) // Определение операций с битами
 #define setbit(p, n)(p |= bit(n)) // Установить бит
@@ -87,9 +84,9 @@ int putchar(int data) // Вывод байта в UART
     return data;
 } //putchar
 
-void OutText(char * text) // Вывод текста в UART
+void OutText(char* text) // Вывод текста в UART
 {
-    while ( * text) putchar( * text++);
+    while (*text) putchar(*text++);
 } //OutText
 
 void OutDat(unsigned long int val, unsigned char len, unsigned char Const) // Вывод числа в UART
@@ -101,7 +98,7 @@ void OutDat(unsigned long int val, unsigned char len, unsigned char Const) // В
     {
         *(Str + (len - k - 1)) = (val % Const) + '0';
 
-        if ( * (Str + (len - k - 1)) > '9')
+        if (*(Str + (len - k - 1)) > '9')
             *
             (Str + (len - k - 1)) += 'A' - '0' - 10;
         val /= Const;
@@ -196,8 +193,8 @@ char KeyScan(void) // Сканирование клавиатуры. Выдае�
 {
     unsigned char PreKeyCode = 0;
     unsigned char KeyCode = 0;
-    #define FIRST_DEBOUNCE_TIME 100
-    #define DEBOUNCE_TIME 20
+#define FIRST_DEBOUNCE_TIME 100
+#define DEBOUNCE_TIME 20
 
     clrbit(PORTC, COL1); // Сканирование колонки 1
     setbit(PORTC, COL2);
@@ -315,7 +312,7 @@ __interrupt void TIMER0_OVF_Interrupt(void) {
     }
 } //TIMER0_OVF_Interrupt
 
-int StrToInt(char * InputStr) // Процедура конвертирует строку в число типа int. Конвертируются только цифры
+int StrToInt(char* InputStr) // Процедура конвертирует строку в число типа int. Конвертируются только цифры
 {
     int ReturnValue = 0;
     unsigned char StrCount = 0;
@@ -341,7 +338,7 @@ void SignalLevelDefinition(void) {
         GSMSigStrength /= 5;
         if (GSMSigStrength == 0) GSMSigStrength = 1; // Чтобы моргнуть хотя бы раз и показать пользователю, что GSM-модуль видит сеть
     }
-    if (GSMSigStrength == 99) //	Ненормальное значение, скорее всего, 99 - "Not known or not detectable"
+    if (GSMSigStrength == 99) // Ненормальное значение, скорее всего, 99 - "Not known or not detectable"
         GSMSigStrength = 0;
 
     switch (GSMSigStrength) { // Порядок свечения светодиода "Signsl level"
@@ -465,7 +462,7 @@ void main(void) {
                 LongBeep();
             }
 
-            if ((Key == 'Y') && (GSMStatus == 1)) //	Нажата клавиша "YES"
+            if ((Key == 'Y') && (GSMStatus == 1)) // Нажата клавиша "YES"
             {
                 OutText("ATD");
                 OutText(NumBuf);
@@ -477,7 +474,7 @@ void main(void) {
                 GSMStatus = 2;
                 setbit(PORTC, H_C); // Зажигаем светодиод "Call"
             }
-            if ((Key == 'Y') && (GSMStatus == 3)) //	Нажата клавиша "YES"
+            if ((Key == 'Y') && (GSMStatus == 3)) // Нажата клавиша "YES"
             {
                 OutText("ATA\n\r");
                 ClearNumBuf();
@@ -488,7 +485,7 @@ void main(void) {
                 setbit(PORTC, H_C); // Зажигаем светодиод "Call"
             }
 
-            if ((Key == 'S') && (GSMStatus == 1)) //	Нажата клавиша "SOS"
+            if ((Key == 'S') && (GSMStatus == 1)) // Нажата клавиша "SOS"
             {
                 OutText("ATD89177985198;\n\r"); // Выходим на связь со службой технической поддержки protoboardfab.com
                 ClearNumBuf();
