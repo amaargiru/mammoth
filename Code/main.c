@@ -2,8 +2,11 @@
 // Версия 0.1 от 23 мая 2011
 
 #include "iom8.h" // Определения внутренних регистров
+
 #include "inavr.h" // Intrinsic-функции
+
 #include "ctype.h" // Операции с символами
+
 #include "string.h" // Операции со строками
 
 #define bit(n)(1 << (n)) // Определение операций с битами
@@ -20,6 +23,7 @@
 #define MOSI 3 // Линия MOSI SPI-интерфейса
 #define MISO 4 // Линия MISO SPI-интерфейса
 #define SCK 5 // Линия SCK SPI-интерфейса
+
 // Порт C
 #define COL2 0 // Колонка 2 опроса клавиатуры
 #define COL1 1 // Колонка 1 опроса клавиатуры
@@ -28,6 +32,7 @@
 #define H_C 4 // Светодиод "Звонок"
 #define H_SL 5 // Светодиод "Уровень сигнала"
 #define RST 6 // Сброс
+
 // Порт D
 #define TXD 0 // Выход UART GSM-модуля, вход UART микроконтроллера
 #define RXD 1 // Вход UART GSM-модуля, выход UART микроконтроллера
@@ -45,7 +50,7 @@ void PortInit(void) // Активация портов ввода-вывода
     DDRC = (1 << COL2) | (1 << COL1) | (1 << BUZZ) | (1 << H_P) | (1 << H_C) | (1 << H_SL); //	Порт C
     DDRD = (1 << RXD) | (1 << COL3); //	Порт D
     PORTD = (1 << ROW1) | (1 << ROW2) | (1 << ROW3) | (1 << ROW4) | (1 << ROW5); // Включаем подтяжки у входов сканирования клавиатуры
-} // PortInit
+}
 
 #define FRAMING_ERROR(1 << FE)
 #define PARITY_ERROR(1 << UPE)
@@ -73,7 +78,7 @@ void UARTinit(void) // Инициализация UART
     UCSRC = (1 << URSEL) | (1 << UCSZ0) | (1 << UCSZ1); // Длина данных 8 бит
     UBRRH = (unsigned char)(MYUBRR >> 8); // Задаем скорость
     UBRRL = (unsigned char)(MYUBRR);
-} // UARTinit
+}
 
 int putchar(int data) // Вывод байта в UART
 {
@@ -82,12 +87,12 @@ int putchar(int data) // Вывод байта в UART
     while (!(UCSRA & DATA_REGISTER_EMPTY));
 
     return data;
-} //putchar
+}
 
-void OutText(char* text) // Вывод текста в UART
+void OutText(char * text) // Вывод текста в UART
 {
-    while (*text) putchar(*text++);
-} //OutText
+    while ( * text) putchar( * text++);
+}
 
 void OutDat(unsigned long int val, unsigned char len, unsigned char Const) // Вывод числа в UART
 {
@@ -98,9 +103,8 @@ void OutDat(unsigned long int val, unsigned char len, unsigned char Const) // В
     {
         *(Str + (len - k - 1)) = (val % Const) + '0';
 
-        if (*(Str + (len - k - 1)) > '9')
-            *
-            (Str + (len - k - 1)) += 'A' - '0' - 10;
+        if ( * (Str + (len - k - 1)) > '9')
+            *(Str + (len - k - 1)) += 'A' - '0' - 10;
         val /= Const;
     }
 
@@ -108,7 +112,7 @@ void OutDat(unsigned long int val, unsigned char len, unsigned char Const) // В
     k = 0;
     while (Str[k] != 0)
         putchar(Str[k++]);
-} //OutDat
+}
 
 #pragma vector = USART_RXC_vect // Прерывание по приходу байта в UART
 __interrupt void USART_RXC_Interrupt(void) {
@@ -118,19 +122,19 @@ __interrupt void USART_RXC_Interrupt(void) {
         RxBuf[RxBufWrPoint] = InData; // Записываем пришедший байт в массив RxBuf
         RxBufWrPoint++;
     }
-} //USART_RXC_Interrupt
+}
 
 void ClearRxBuf(void) // Очистка массива RxBuf
 {
     for (unsigned char ClearPoint = 0; ClearPoint < RXBUFLENGTH; RxBuf[ClearPoint++] = 0);
     RxBufWrPoint = 0;
-} //ClearRxBuf
+}
 
 void ClearNumBuf(void) // Очистка массива RxBuf
 {
     for (unsigned char ClearPoint = 0; ClearPoint < NUMBUFLENGTH; NumBuf[ClearPoint++] = 0);
     NumBufWrPoint = 0;
-} //ClearNumBuf
+}
 
 char KeyConvert(char RawKey) // Конвертирует значение, считанное с клавиатуры в читаемый вид
 {
@@ -187,14 +191,14 @@ char KeyConvert(char RawKey) // Конвертирует значение, сч�
         break;
     }
     return ConvertedKey;
-} //KeyConvert
+}
 
 char KeyScan(void) // Сканирование клавиатуры. Выдает 0, если ни одна клавиша не нажата или код нажатой клавиши (от 1 до 15)
 {
     unsigned char PreKeyCode = 0;
     unsigned char KeyCode = 0;
-#define FIRST_DEBOUNCE_TIME 100
-#define DEBOUNCE_TIME 20
+    #define FIRST_DEBOUNCE_TIME 100
+    #define DEBOUNCE_TIME 20
 
     clrbit(PORTC, COL1); // Сканирование колонки 1
     setbit(PORTC, COL2);
@@ -230,7 +234,7 @@ char KeyScan(void) // Сканирование клавиатуры. Выдае�
     setbit(PORTC, COL2);
     setbit(PORTD, COL3);
     return 0;
-} //KeyScan
+}
 
 void GSM_On(void) // Включение GSM-модуля
 {
@@ -240,40 +244,46 @@ void GSM_On(void) // Включение GSM-модуля
     delay_ms(8000);
     setbit(PORTB, PWRKEY);
     delay_ms(8000);
-} //GSM_On
+}
 
 void Beep(void) // Короткий звуковой сигнал
 {
     setbit(PORTC, H_C);
     setbit(PORTC, BUZZ);
     delay_ms(10);
+
     if ((GSMStatus != 2) && (GSMStatus != 3)) // Если идет входящий или исходящий звонок, светодиод "Call" гасить не надо
         clrbit(PORTC, H_C);
+
     clrbit(PORTC, BUZZ);
     delay_ms(20);
-} //Beep
+}
 
 void LongBeep(void) // Звуковой сигнал подлиннее
 {
     setbit(PORTC, H_C);
     setbit(PORTC, BUZZ);
     delay_ms(15);
+
     if ((GSMStatus != 2) && (GSMStatus != 3)) // Если идет входящий или исходящий звонок, светодиод "Call" гасить не надо
         clrbit(PORTC, H_C);
+
     clrbit(PORTC, BUZZ);
     delay_ms(100);
-} //LongBeep
+}
 
 void IncomingCallBeep(void) // Длинный звуковой сигнал
 {
     setbit(PORTC, H_C);
     setbit(PORTC, BUZZ);
     delay_ms(100);
+
     if ((GSMStatus != 2) && (GSMStatus != 3)) // Если идет входящий или исходящий звонок, светодиод "Call" гасить не надо
         clrbit(PORTC, H_C);
+
     clrbit(PORTC, BUZZ);
     delay_ms(100);
-} //IncomingCallBeep
+}
 
 unsigned int PowerFlashOrder = 0xAAAA; // = 1010101010101010b
 unsigned int SignalLevelFlashOrder = 0x0000;
@@ -283,7 +293,7 @@ void TimerInit(void) // Инициализация таймера
     TCCR0 = (1 << CS00) | (1 << CS01); // Тактирование от системного клока, с предделителем 1024 = ~30 мс @ 7 МГц
     TIMSK |= 1 << TOIE0; // Разрешить прерывания по достижению OCR0A
     TCNT0 = 0x00;
-} //TimerInit()
+}
 
 unsigned int TimerCounter = 0;
 unsigned char SignalLevelObsolete = 0;
@@ -310,9 +320,9 @@ __interrupt void TIMER0_OVF_Interrupt(void) {
             SignalLevelObsolete = 1;
         }
     }
-} //TIMER0_OVF_Interrupt
+}
 
-int StrToInt(char* InputStr) // Процедура конвертирует строку в число типа int. Конвертируются только цифры
+int StrToInt(char * InputStr) // Процедура конвертирует строку в число типа int. Конвертируются только цифры
 {
     int ReturnValue = 0;
     unsigned char StrCount = 0;
@@ -322,7 +332,7 @@ int StrToInt(char* InputStr) // Процедура конвертирует ст
             ReturnValue = 10 * ReturnValue + (InputStr[StrCount] - 48);
 
     return ReturnValue;
-} //StrToInt
+}
 
 void SignalLevelDefinition(void) {
     ClearRxBuf(); // Перед AT+CSQ
@@ -330,6 +340,7 @@ void SignalLevelDefinition(void) {
     delay_ms(300);
     OutText(RxBuf);
     OutText("\n\r");
+
     strtok(RxBuf, ","); // Отсекаем bit error rate <ber>, который идет после запятой
     GSMSigStrength = StrToInt(RxBuf);
     if (GSMSigStrength >= 25) // Нормальное значение
@@ -363,7 +374,7 @@ void SignalLevelDefinition(void) {
     default:
         break;
     }
-} //SignalLevelDefinition
+}
 
 void main(void) {
     PortInit(); // Активация портов ввода-вывода
@@ -474,6 +485,7 @@ void main(void) {
                 GSMStatus = 2;
                 setbit(PORTC, H_C); // Зажигаем светодиод "Call"
             }
+
             if ((Key == 'Y') && (GSMStatus == 3)) // Нажата клавиша "YES"
             {
                 OutText("ATA\n\r");
