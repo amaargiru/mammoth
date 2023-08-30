@@ -14,15 +14,11 @@
 #define clrbit(p, n)(p &= ~bit(n)) // Сбросить бит
 
 #define MASTERCLOCK 7372800 // Тактовая частота процессора в Гц
-#define delay_us(c) __delay_cycles(MASTERCLOCK / 1000000 * c) // Микросекундная задержка. c max = 268435455
 #define delay_ms(c) __delay_cycles(MASTERCLOCK / 1000 * c) // Миллисекундная задержка. c max = 268435
 
 // Порт B
 #define PWRKEY 1 // Включение GSM модуля
 #define ENA 2 // Включение питания GSM-модуля
-#define MOSI 3 // Линия MOSI SPI-интерфейса
-#define MISO 4 // Линия MISO SPI-интерфейса
-#define SCK 5 // Линия SCK SPI-интерфейса
 
 // Порт C
 #define COL2 0 // Колонка 2 опроса клавиатуры
@@ -31,10 +27,8 @@
 #define H_P 3 // Светодиод "Питание"
 #define H_C 4 // Светодиод "Звонок"
 #define H_SL 5 // Светодиод "Уровень сигнала"
-#define RST 6 // Сброс
 
 // Порт D
-#define TXD 0 // Выход UART GSM-модуля, вход UART микроконтроллера
 #define RXD 1 // Вход UART GSM-модуля, выход UART микроконтроллера
 #define ROW1 2 // Строка 1 опроса клавиатуры
 #define ROW2 3 // Строка 2 опроса клавиатуры
@@ -52,9 +46,6 @@ void PortInit(void) // Активация портов ввода-вывода
     PORTD = (1 << ROW1) | (1 << ROW2) | (1 << ROW3) | (1 << ROW4) | (1 << ROW5); // Включаем подтяжки у входов сканирования клавиатуры
 }
 
-#define FRAMING_ERROR(1 << FE)
-#define PARITY_ERROR(1 << UPE)
-#define DATA_OVERRUN(1 << DOR)
 #define DATA_REGISTER_EMPTY(1 << UDRE)
 #define BAUD 115200 // Скорость UART
 #define MYUBRR(MASTERCLOCK / 16 / BAUD - 1)
@@ -67,7 +58,8 @@ volatile unsigned char RxBufWrPoint = 0;
 char NumBuf[NUMBUFLENGTH]; // Буфер для набираемого номера
 volatile unsigned char NumBufWrPoint = 0;
 
-unsigned char GSMStatus = 0; // Состояние GSM-модуля: 0 - выключен ; 1 - включен; 2 - исходящий звонок; 3 - входящий звонок; 4 - идет разговор по входящему звонку
+// Состояние GSM-модуля: 0 - выключен ; 1 - включен; 2 - исходящий звонок; 3 - входящий звонок; 4 - идет разговор по входящему звонку
+unsigned char GSMStatus = 0;
 char GSMSigStrength = 0; // Уровень сигнала
 
 void UARTinit(void) // Инициализация UART
@@ -97,9 +89,8 @@ void OutText(char * text) // Вывод текста в UART
 void OutDat(unsigned long int val, unsigned char len, unsigned char Const) // Вывод числа в UART
 {
     unsigned char Str[16]; // Максимальная длина числа (в печатаемом виде)
-    unsigned char k = 0;
 
-    for (k = 0; k < len; k++) // Превращаем число в строку
+    for (unsigned char k = 0; k < len; k++) // Превращаем число в строку
     {
         *(Str + (len - k - 1)) = (val % Const) + '0';
 
@@ -109,7 +100,7 @@ void OutDat(unsigned long int val, unsigned char len, unsigned char Const) // В
     }
 
     Str[len] = 0; // Печатаем число
-    k = 0;
+    unsigned char k = 0;
     while (Str[k] != 0)
         putchar(Str[k++]);
 }
@@ -138,7 +129,7 @@ void ClearNumBuf(void) // Очистка массива RxBuf
 
 char KeyConvert(char RawKey) // Конвертирует значение, считанное с клавиатуры в читаемый вид
 {
-    char ConvertedKey = 0;
+    char ConvertedKey;
 
     switch (RawKey) {
     case (0xE8):
@@ -352,7 +343,7 @@ void SignalLevelDefinition(void) {
     if (GSMSigStrength == 99) // Ненормальное значение, скорее всего, 99 - "Not known or not detectable"
         GSMSigStrength = 0;
 
-    switch (GSMSigStrength) { // Порядок свечения светодиода "Signsl level"
+    switch (GSMSigStrength) { // Порядок свечения светодиода "Signal level"
     case 5:
         SignalLevelFlashOrder = 0xAA80;
         break; // = 1010101010000000b
@@ -419,7 +410,8 @@ void main(void) {
     SignalLevelDefinition();
     PowerFlashOrder = 0xFFFF; // = 1111111111111111b, т. е. светодиод "Power" горит постоянно
 
-    delay_ms(FIRST_DEBOUNCE_TIME); // Для устаканивания переходных процессов после включения питания, могущих пролезть на входы сканирования клавиатуры
+    // Для устаканивания переходных процессов после включения питания, могущих пролезть на входы сканирования клавиатуры
+    delay_ms(FIRST_DEBOUNCE_TIME);
 
     char Key = 0;
     char OldKey = 0;
@@ -455,18 +447,19 @@ void main(void) {
         Key = KeyScan();
         if ((Key != 0) && (Key != OldKey)) // Если что-то отсканировано и не повтор, моргнем лампочкой и вышлем код
         {
-            if ((Key != 'Y') && (Key != 'S') && (Key != 'N') && (GSMStatus != 2) && (GSMStatus != 3) && (GSMStatus != 4)) // Нажата цифровая клавиша или * или # плюс во время разговора разблокированы только служебные клавиши "YES" и "NO"
+            // Нажата цифровая клавиша или * или # плюс во время разговора разблокированы только служебные клавиши "YES" и "NO"
+            if ((Key != 'Y') && (Key != 'S') && (Key != 'N') && (GSMStatus != 2) && (GSMStatus != 3) && (GSMStatus != 4))
             {
                 NumBuf[NumBufWrPoint] = Key;
                 NumBufWrPoint++;
                 Beep();
             }
 
-            if (Key == 'N') //	Нажата клавиша "NO"
+            if (Key == 'N') //	Нажата клавиша "NO"...
             {
                 ClearNumBuf();
-                OutText("ATH\n\r"); // ...то сбрасываем разговор
-                clrbit(PORTC, H_C); // Гасим светодиод "Call"
+                OutText("ATH\n\r"); // ...то сбрасываем разговор...
+                clrbit(PORTC, H_C); // ... и гасим светодиод "Call"
                 GSMStatus = 1;
                 delay_ms(200);
                 LongBeep();
